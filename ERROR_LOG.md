@@ -1,3 +1,18 @@
+## 13. Netlify Secrets Scanning Build Failure
+**Symptoms:**
+- Netlify build failed with: `Secrets scanning found 1 instance(s) of secrets in build output or repo code.`
+- Secret env var `VITE_CLOUDINARY_UPLOAD_PRESET`'s value (`RelaySignal`) was detected in 18+ files across the repo.
+
+**Root Cause:**
+- The Cloudinary upload preset was set to `RelaySignal`, which is also the project name.
+- Netlify's secret scanner flags any occurrence of a secret's value in source files as a leak.
+- Since "RelaySignal" appears throughout the codebase (App title, headers, file names, etc.), the scanner falsely identified every occurrence as a secret exposure.
+
+**Solution:**
+- Removed unused Cloudinary environment variables (`VITE_CLOUDINARY_CLOUD_NAME` and `VITE_CLOUDINARY_UPLOAD_PRESET`) from `.env`.
+- Cloudinary was not actually used anywhere in the application code, so these variables were unnecessary.
+- Build now passes Netlify secrets scanning successfully.
+
 ## 8. Android Browser Login Loop (The FIRST-PARTY PROXY Fix)
 **Symptoms:** 
 - Users on Android Chrome experience a persistent login loop despite session management fixes.
