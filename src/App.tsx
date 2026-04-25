@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from 'react'
-import { Bell, Clock, Plus, Check, Calendar, Moon, Sun, X, AlertCircle, LogIn, LogOut, User, AlignLeft, Trash2, Mic, MicOff, Play, Pause, Volume2, Shield, Link2, Users, ChevronDown, ChevronUp } from 'lucide-react'
+import { Bell, Clock, Plus, Check, Calendar, Moon, Sun, X, AlertCircle, LogIn, User, AlignLeft, Trash2, Mic, MicOff, Volume2, Shield, Link2, Users, ChevronDown, ChevronUp, Settings } from 'lucide-react'
 import { notificationScheduler } from './services/notificationScheduler'
-import { auth, googleProvider, signInWithPopup, signOut } from './lib/firebase'
+import { auth, signOut, signInWithPopup, googleProvider, deleteUserAccount, getUserData } from './lib/firebase'
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth'
 import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, deleteDoc, Timestamp } from 'firebase/firestore'
 import { db } from './lib/firebase'
 import ReactQuill from 'react-quill'
 import 'react-quill/dist/quill.snow.css'
+import AuthPage from './components/AuthPage'
+import ProfileCompletion from './components/ProfileCompletion'
 
 function App() {
   const [tasks, setTasks] = useState<Array<{
@@ -28,7 +30,6 @@ function App() {
   const [user, setUser] = useState<FirebaseUser | null>(null)
   const [loading, setLoading] = useState(true)
   const [isRecording, setIsRecording] = useState(false)
-  const [audioBlob, setAudioBlob] = useState<Blob | null>(null)
   const [audioUrl, setAudioUrl] = useState<string | null>(null)
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -38,12 +39,35 @@ function App() {
   const [isPoll, setIsPoll] = useState(false)
   const [pollOptions, setPollOptions] = useState<string[]>(['', ''])
   const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null)
+  const [profileCompleted, setProfileCompleted] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
 
   useEffect(() => {
     notificationScheduler.init()
-    const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
       setUser(user)
-      setIsAdmin(user?.email?.includes('admin') || false)
+      
+      if (user) {
+        try {
+          const userData = await getUserData(user.uid)
+          
+          if (userData) {
+            setIsAdmin(userData.role === 'admin')
+            setProfileCompleted(userData.profileCompleted)
+          } else {
+            setIsAdmin(user?.email?.includes('admin') || false)
+            setProfileCompleted(false)
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error)
+          setIsAdmin(user?.email?.includes('admin') || false)
+          setProfileCompleted(false)
+        }
+      } else {
+        setIsAdmin(false)
+        setProfileCompleted(false)
+      }
+      
       setLoading(false)
     })
     return () => unsubscribeAuth()
@@ -119,7 +143,6 @@ function App() {
 
       mediaRecorder.onstop = () => {
         const blob = new Blob(chunks, { type: 'audio/webm' })
-        setAudioBlob(blob)
         setAudioUrl(URL.createObjectURL(blob))
         stream.getTracks().forEach(track => track.stop())
       }
@@ -247,6 +270,14 @@ function App() {
     )
   }
 
+  if (!user) {
+    return <AuthPage onAuthSuccess={() => setLoading(false)} />
+  }
+
+  if (!profileCompleted) {
+    return <ProfileCompletion onComplete={() => setProfileCompleted(true)} />
+  }
+
   return (
     <div className={`min-h-screen transition-colors duration-300 ${darkMode ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100' : 'bg-gradient-to-br from-gray-50 via-white to-gray-100 text-slate-900'}`}>
       
@@ -281,6 +312,14 @@ function App() {
             >
               {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
+            {user && (
+              <button
+                onClick={() => setShowSettings(!showSettings)}
+                className={`p-2.5 rounded-xl transition-all ${darkMode ? 'bg-slate-700 hover:bg-slate-600' : 'bg-gray-100 hover:bg-gray-200'}`}
+              >
+                <Settings className="w-5 h-5" />
+              </button>
+            )}
             {user ? (
               <div className="flex items-center gap-3">
                 <div className={`hidden md:block text-right`}>
@@ -301,6 +340,54 @@ function App() {
           </div>
         </div>
       </header>
+
+      {/* Account Settings Panel */}
+      {showSettings && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className={`max-w-md w-full rounded-2xl p-6 shadow-2xl ${darkMode ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-gray-200'}`}>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold">Account Settings</h2>
+              <button
+                onClick={() => setShowSettings(false)}
+                className={`p-2 rounded-lg transition-colors ${darkMode ? 'hover:bg-slate-700' : 'hover:bg-gray-100'}`}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              {/* Account Deletion Section */}
+              <div className={`p-4 rounded-xl border ${darkMode ? 'bg-red-500/10 border-red-500/20' : 'bg-red-50 border-red-200'}`}>
+                <div className="flex items-center gap-2 mb-3">
+                  <Trash2 className="w-5 h-5 text-red-500" />
+                  <h3 className="font-semibold text-sm">Delete Account</h3>
+                </div>
+                <p className={`text-xs mb-3 ${darkMode ? 'text-slate-400' : 'text-gray-600'}`}>
+                  Permanently delete your account and all associated data. This action cannot be undone.
+                </p>
+                <button
+                  onClick={async () => {
+                    if (user && window.confirm('Are you sure you want to permanently delete your account and all associated data? This cannot be undone.')) {
+                      try {
+                        await deleteUserAccount(user);
+                        await signOut(auth);
+                        showToast('Account deleted successfully.');
+                      } catch (error) {
+                        console.error('Error deleting account:', error);
+                        showToast('Error deleting account. Please try again.');
+                      }
+                    }
+                  }}
+                  className="w-full py-2.5 px-4 rounded-lg bg-red-500 hover:bg-red-600 text-white text-sm font-medium transition-all flex items-center justify-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Delete My Account
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <main className="max-w-4xl mx-auto p-4 md:p-6 pt-8">
         {isAdmin && (
@@ -356,6 +443,7 @@ function App() {
                     )}
                   </div>
                 </div>
+
               </div>
             )}
           </div>
@@ -536,7 +624,7 @@ function App() {
               className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-medium py-4 px-6 rounded-xl transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 group"
             >
               <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" /> 
-              Schedule with Offline Reminder
+              Schedule the Task
             </button>
           </div>
         </div>

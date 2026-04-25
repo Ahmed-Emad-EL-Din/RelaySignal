@@ -1,13 +1,13 @@
-# Notfy - Netlify Deployment Guide
+# RelaySignal - Netlify Deployment Guide
 
 ## What to Upload to Netlify
 
-**Upload the ENTIRE "Notfy" project folder** - all files and subdirectories.
+**Upload the ENTIRE "RelaySignal" project folder** - all files and subdirectories.
 
 ## Files That Must Be Included:
 
 ```
-Notfy/
+RelaySignal/
 ├── package.json          (Required - dependencies & build scripts)
 ├── package-lock.json     (Required - locked versions)
 ├── vite.config.ts        (Required - Vite configuration)
@@ -17,25 +17,30 @@ Notfy/
 │   ├── App.tsx
 │   ├── main.tsx
 │   ├── index.css
+│   ├── vite-env.d.ts
 │   └── components/
-│       └── AdminPanel.tsx
+│       ├── AuthPage.tsx
+│       ├── RoleSelector.tsx
+│       └── ...
 ├── tailwind.config.js    (Required - Tailwind CSS)
 ├── postcss.config.js     (Required - PostCSS)
-└── tsconfig.node.json    (Required - Node config)
+├── tsconfig.node.json    (Required - Node config)
+├── .env                  (Required - environment variables)
+└── test-before-deployment.bat (Optional - test script)
 ```
 
 ## Netlify Deployment Steps:
 
 1. **Upload to GitHub:**
    - Create a new repository on GitHub
-   - Upload the entire Notfy folder
+   - Upload the entire RelaySignal folder
    - Commit and push all files
 
 2. **Connect to Netlify:**
    - Sign up/login to Netlify
    - Click "New site from Git"
    - Connect your GitHub account
-   - Select your Notfy repository
+   - Select your RelaySignal repository
 
 3. **Build Settings:**
    - Build command: `npm run build`

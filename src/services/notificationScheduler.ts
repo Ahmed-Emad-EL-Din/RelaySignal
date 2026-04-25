@@ -48,14 +48,16 @@ class NotificationScheduler {
       await registration.showNotification('RelaySignal', {
         body: `${title} is due in ${offsetMinutes} minutes`,
         tag: reminderId,
-        showTrigger: new (window as any).TimestampTrigger(triggerTime),
+        ...(NOTIFICATION_TRIGGERS_SUPPORTED && {
+          showTrigger: new (window as any).TimestampTrigger(triggerTime)
+        }),
         data: {
           taskId,
           title,
           dueDate,
           offsetMinutes
         }
-      });
+      } as NotificationOptions);
     }
 
     const reminder: TaskReminder = {
