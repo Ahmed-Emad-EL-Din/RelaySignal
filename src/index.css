@@ -1,0 +1,57 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Quill Dark Mode Styles */
+.quill-dark .ql-toolbar {
+  background-color: #1e293b !important;
+  border-color: #334155 !important;
+  border-top-left-radius: 0.75rem;
+  border-top-right-radius: 0.75rem;
+}
+.quill-dark .ql-toolbar .ql-picker-label,
+.quill-dark .ql-toolbar .ql-picker-item {
+  color: #94a3b8 !important;
+}
+.quill-dark .ql-toolbar button {
+  filter: invert(0.7);
+}
+.quill-dark .ql-toolbar button:hover,
+.quill-dark .ql-toolbar button.ql-active {
+  background-color: #334155 !important;
+}
+.quill-dark .ql-container {
+  background-color: #0f172a !important;
+  border-color: #334155 !important;
+  border-bottom-left-radius: 0.75rem;
+  border-bottom-right-radius: 0.75rem;
+}
+.quill-dark .ql-editor {
+  color: #e2e8f0 !important;
+  min-height: 120px;
+}
+.quill-dark .ql-editor.ql-blank::before {
+  color: #64748b !important;
+}
+.quill-dark .ql-stroke {
+  stroke: #94a3b8 !important;
+}
+.quill-dark .ql-fill {
+  fill: #94a3b8 !important;
+}
+
+.ql-editor {
+  min-height: 120px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
